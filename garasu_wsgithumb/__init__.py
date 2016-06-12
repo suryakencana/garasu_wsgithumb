@@ -3,6 +3,7 @@ import logging
 import os
 from hashlib import md5
 import stat
+from pyramid.path import AssetResolver
 from .utils import get_file_response, compress_pil
 from .utils import HTTPNotFound
 from .utils import resize
@@ -159,8 +160,31 @@ def add_thumb_view(config, route_name, sizes=DEFAULT_SIZES, factors=(),
 
 def includeme(config):
     """pyramid include. declare the add_thumb_view"""
+    settings = config.get_settings()
+
+    storage_dir = settings.get('garasu_wsgithumb.path', 'storage')
+
+    storage_dir = AssetResolver(None).resolve(storage_dir).abspath()
     config.add_directive('add_thumb_view', add_thumb_view)
     config.add_directive('add_file_view', add_file_view)
+
+    sizes = {
+        'icon': (16, 16),
+        'small': (24, 24),
+        'thumb': (80, 80),
+        'card': (167, 200),
+        'gallery': (320, 480),
+        'bloglist': (400, 259),
+        'blogview': (1366, 768),
+        'featuredimage': (840, 381),
+        'landscape': (1024, 780),
+        'mobile': 20,
+        'web': 35,
+        'original': None
+    }
+    config.add_thumb_view('thumbs', sizes=sizes,
+                          document_root=storage_dir,
+                          cache_directory='/'.join([storage_dir, 'cache']))
 
 
 def make_thumb_app(global_conf, document_root=None,
